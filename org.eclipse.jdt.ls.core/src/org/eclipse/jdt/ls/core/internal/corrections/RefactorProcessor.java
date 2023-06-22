@@ -58,6 +58,7 @@ import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.VariableDeclaration;
@@ -93,6 +94,7 @@ import org.eclipse.jdt.internal.ui.fix.LambdaExpressionsCleanUpCore;
 import org.eclipse.jdt.internal.ui.fix.MultiFixMessages;
 import org.eclipse.jdt.internal.ui.text.correction.IProblemLocationCore;
 import org.eclipse.jdt.ls.core.internal.JavaLanguageServerPlugin;
+import org.eclipse.jdt.ls.core.internal.corext.refactoring.surround.SurroundWithTryCatchRefactoring;
 import org.eclipse.jdt.ls.core.internal.corrections.proposals.ASTRewriteRemoveImportsCorrectionProposal;
 import org.eclipse.jdt.ls.core.internal.corrections.proposals.CUCorrectionProposal;
 import org.eclipse.jdt.ls.core.internal.corrections.proposals.ChangeCorrectionProposal;
@@ -123,6 +125,7 @@ public class RefactorProcessor {
 	}
 
 	public List<ChangeCorrectionProposal> getProposals(CodeActionParams params, IInvocationContext context, IProblemLocationCore[] locations) throws CoreException {
+		JavaLanguageServerPlugin.logError("RefactorProcessor.getProposals called");
 		ASTNode coveringNode = context.getCoveringNode();
 		if (coveringNode != null) {
 			ArrayList<ChangeCorrectionProposal> proposals = new ArrayList<>();
@@ -153,7 +156,7 @@ public class RefactorProcessor {
 				getAssignToVariableProposals(context, coveringNode, locations, proposals, params);
 				getIntroduceParameterProposals(params, context, coveringNode, locations, proposals);
 				getExtractInterfaceProposal(params, context, proposals);
-				getChangeSignatureProposal(params, context, proposals);
+				getSurroundWithTryCatchProposal(context, proposals);
 			}
 			return proposals;
 		}
@@ -1019,5 +1022,75 @@ public class RefactorProcessor {
 
 		proposals.add(proposal);
 		return true;
+	}
+
+	private boolean getSurroundWithTryCatchProposal(IInvocationContext context, Collection<ChangeCorrectionProposal> proposals) {
+		JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal called");
+
+		if (proposals == null) {
+			return false;
+		}
+
+		JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal proposals OK");
+
+		if(context.getSelectionLength() <= 0) {
+			return false;
+		}
+
+		JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal selection length OK");
+
+		ICompilationUnit cu = context.getCompilationUnit();
+
+		CompilationUnit astRoot = context.getASTRoot();
+		ASTNode selectedNode = context.getCoveredNode();
+		if (selectedNode == null) {
+			return false;
+		}
+
+		JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal covered node OK");
+
+		while (selectedNode != null && !(selectedNode instanceof Statement) && !(selectedNode instanceof VariableDeclarationExpression) && !(selectedNode.getLocationInParent() == LambdaExpression.BODY_PROPERTY)
+				&& !(selectedNode instanceof MethodReference)) {
+			selectedNode = selectedNode.getParent();
+		}
+		if (selectedNode == null) {
+			return false;
+		}
+
+		JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal selected node OK");
+
+		int offset = selectedNode.getStartPosition();
+		int length = selectedNode.getLength();
+		int selectionEnd = context.getSelectionOffset() + context.getSelectionLength();
+
+		if (selectionEnd > offset + length) {
+			// extend the selection if more than one statement is selected (bug 72149)
+			length = selectionEnd - offset;
+		}
+
+		try {
+			SurroundWithTryCatchRefactoring refactoring = SurroundWithTryCatchRefactoring.create(cu, offset, length);
+
+			if (!refactoring.checkActivationBasics(astRoot).isOK()) {
+				return false;
+			}
+
+			JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal activation basics OK");
+
+			refactoring.setLeaveDirty(true);
+
+			String label = CorrectionMessages.LocalCorrectionsSubProcessor_surroundwith_trycatch_description;
+			RefactoringCorrectionProposal proposal = new RefactoringCorrectionProposal(label, CodeActionKind.Refactor, cu, refactoring, IProposalRelevance.SURROUND_WITH_TRY_CATCH);
+			proposal.setLinkedProposalModel(refactoring.getLinkedProposalModel());
+
+			proposals.add(proposal);
+			return true;
+		} catch (CoreException e) {
+			JavaLanguageServerPlugin.log(e);
+		}
+
+		JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal core exception");
+
+		return false;
 	}
 }
