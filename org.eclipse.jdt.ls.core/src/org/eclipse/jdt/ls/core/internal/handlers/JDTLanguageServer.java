@@ -736,6 +736,7 @@ public class JDTLanguageServer extends BaseJDTLanguageServer implements Language
 	@Override
 	public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(CodeActionParams params) {
 		debugTrace(">> document/codeAction");
+		JavaLanguageServerPlugin.logError("JDTLanguageServer codeAction params "+params);
 		CodeActionHandler handler = new CodeActionHandler(this.preferenceManager);
 		return computeAsync((monitor) -> {
 			waitForLifecycleJobs(monitor);
