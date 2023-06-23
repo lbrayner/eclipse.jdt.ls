@@ -156,6 +156,7 @@ public class RefactorProcessor {
 				getAssignToVariableProposals(context, coveringNode, locations, proposals, params);
 				getIntroduceParameterProposals(params, context, coveringNode, locations, proposals);
 				getExtractInterfaceProposal(params, context, proposals);
+				getChangeSignatureProposal(params, context, proposals);
 				getSurroundWithTryCatchProposal(context, proposals);
 			}
 			return proposals;
