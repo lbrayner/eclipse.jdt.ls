@@ -96,7 +96,6 @@ public class CodeActionHandler {
 	}
 
 	public List<Either<Command, CodeAction>> getCodeActionCommands(CodeActionParams params, IProgressMonitor monitor) {
-		JavaLanguageServerPlugin.logError("CodeActionHandler.getCodeActionCommands called");
 		if (monitor.isCanceled()) {
 			return Collections.emptyList();
 		}
@@ -181,8 +180,6 @@ public class CodeActionHandler {
 			try {
 				List<ChangeCorrectionProposal> refactorProposals = this.refactorProcessor.getProposals(params, context, locations);
 				refactorProposals.sort(comparator);
-				JavaLanguageServerPlugin.logError(
-						"CodeActionHandler adding "+refactorProposals.size()+" proposal(s).");
 				proposals.addAll(refactorProposals);
 			} catch (CoreException e) {
 				JavaLanguageServerPlugin.logException("Problem resolving refactor code actions", e);
@@ -360,7 +357,6 @@ public class CodeActionHandler {
 	}
 
 	public static InnovationContext getContext(ICompilationUnit unit, CompilationUnit astRoot, Range range) {
-		JavaLanguageServerPlugin.logError("CodeActionHandler.getContext range "+range);
 		int start = DiagnosticsHelper.getStartOffset(unit, range);
 		int end = DiagnosticsHelper.getEndOffset(unit, range);
 		InnovationContext context = new InnovationContext(unit, start, end - start);
