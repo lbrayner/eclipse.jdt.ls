@@ -125,7 +125,6 @@ public class RefactorProcessor {
 	}
 
 	public List<ChangeCorrectionProposal> getProposals(CodeActionParams params, IInvocationContext context, IProblemLocationCore[] locations) throws CoreException {
-		JavaLanguageServerPlugin.logError("RefactorProcessor.getProposals called");
 		ASTNode coveringNode = context.getCoveringNode();
 		if (coveringNode != null) {
 			ArrayList<ChangeCorrectionProposal> proposals = new ArrayList<>();
@@ -1026,19 +1025,13 @@ public class RefactorProcessor {
 	}
 
 	private boolean getSurroundWithTryCatchProposal(IInvocationContext context, Collection<ChangeCorrectionProposal> proposals) {
-		JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal called");
-
 		if (proposals == null) {
 			return false;
 		}
 
-		JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal proposals OK");
-
 		if(context.getSelectionLength() <= 0) {
 			return false;
 		}
-
-		JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal selection length OK");
 
 		ICompilationUnit cu = context.getCompilationUnit();
 
@@ -1048,8 +1041,6 @@ public class RefactorProcessor {
 			return false;
 		}
 
-		JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal covered node OK");
-
 		while (selectedNode != null && !(selectedNode instanceof Statement) && !(selectedNode instanceof VariableDeclarationExpression) && !(selectedNode.getLocationInParent() == LambdaExpression.BODY_PROPERTY)
 				&& !(selectedNode instanceof MethodReference)) {
 			selectedNode = selectedNode.getParent();
@@ -1057,8 +1048,6 @@ public class RefactorProcessor {
 		if (selectedNode == null) {
 			return false;
 		}
-
-		JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal selected node OK");
 
 		int offset = selectedNode.getStartPosition();
 		int length = selectedNode.getLength();
@@ -1076,8 +1065,6 @@ public class RefactorProcessor {
 				return false;
 			}
 
-			JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal activation basics OK");
-
 			refactoring.setLeaveDirty(true);
 
 			String label = CorrectionMessages.LocalCorrectionsSubProcessor_surroundwith_trycatch_description;
@@ -1089,8 +1076,6 @@ public class RefactorProcessor {
 		} catch (CoreException e) {
 			JavaLanguageServerPlugin.log(e);
 		}
-
-		JavaLanguageServerPlugin.logError("getSurroundWithTryCatchProposal core exception");
 
 		return false;
 	}
